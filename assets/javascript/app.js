@@ -100,7 +100,7 @@ console.log(arrHelper.length, arrQuestions.length);
 
 function displayNextQuestion(choseWisely) {
     console.log(arrHelper, arrHelper[0], arrHelper.length)
-    gamePause = false;
+    gamePaused = false;
     clearInterval(questionTimer);
     if (arrHelper.indexOf(0) >= 0) {
         console.log("still some questions left...")
