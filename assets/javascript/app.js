@@ -85,7 +85,7 @@ var arrQuestions = [{
     }
 ];
 
-const allowedTime = 5;
+const allowedTime = 10;
 var gamePaused = false;
 var timeCounter;
 var questionTimer;
