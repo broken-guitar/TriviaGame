@@ -3,6 +3,7 @@
 var $divQuestion = $("#question-container");
 var $divAnswers = $("#answer-container");
 var $pTimerOrStatus = $("#timer-status");
+var $divGameMessage = $("#game-message");
 var arrQuestions = [{
         questionText: "Who created Javascript?",
         answers: {
@@ -86,6 +87,7 @@ var arrQuestions = [{
 ];
 
 const allowedTime = 10;
+const defaultDelay = 3500;
 var gamePaused = false;
 var timeCounter;
 var questionTimer;
@@ -93,47 +95,74 @@ var curQuestion = {};
 var arrHelper = [];
 arrHelper.length = arrQuestions.length;
 arrHelper.fill(0);
-console.log(arrHelper.length, arrQuestions.length);
-
 
 // FUNCTIONS ----------------------------------------------------------------
 
+
 function displayNextQuestion(choseWisely) {
-    console.log(arrHelper, arrHelper[0], arrHelper.length)
     gamePaused = false;
+    $divGameMessage.empty();
     clearInterval(questionTimer);
+    // check if there are still questions to play...
     if (arrHelper.indexOf(0) >= 0) {
-        console.log("still some questions left...")
+        // ...select next question
         for (var i = 0; arrHelper.length; i++) {
             if (arrHelper[i] == 1) {
-                console.log("skipping because question was already played...");
+                // skip this question becuase it's already been played
                 continue;
             } else {
-                console.log("render answers...");
-                arrHelper[i] = 1;
-                curQuestion = arrQuestions[i];
+                // render multiple-choice answers
+                arrHelper[i] = 1; // tag the questions as played in question tracking array
+                curQuestion = arrQuestions[i]; // set global current question object
                 $divQuestion.empty();
                 $divQuestion.append($("<h3>").text(curQuestion.questionText));
                 $("h3").attr("class", "h3 p-3");
-                console.log("current question: ", curQuestion.questionText);
                 $divAnswers.empty();
+                // foreach to loop through questions answers,
+                //  style and append to DOM
                 Object.entries(curQuestion.answers).forEach(([key, prop]) => {
-                    $divAnswers.append($("<h5>").attr("id", key).text(prop.answerText));
-                    $("h5").attr("class", "choice h5 p-3");
+                    $divAnswers.append($("<h5>").attr({
+                        "id": key,
+                        "class": "choice border border-0 border-dark rounded-20 h5 p-3 d-table"
+                    }).text("○ " + prop.answerText));
                 });
-
                 // start the timer
                 startTimer(allowedTime);
                 break;
             }
         }
     } else {
-        console.log("no more questions")
+        // no more questions; game over
         gameOver();
     }
+}
+
+function displayCorrectAnswer() {
+    // loop through answers and display if the correct answer(s) 
+    //      trying for..in method of looping through objects
+    let correctAnswerCount = 0;
+    let correctAnswerText = "";
+    for (var key in curQuestion.answers) {
+        if (curQuestion.answers.hasOwnProperty(key)) {
+            if (curQuestion.answers[key].correct) {
+                $("#" + key + ".choice").addClass("bg-success");
+                correctAnswerCount++;
+                if (correctAnswerCount > 1) {
+                    correctAnswerText = correctAnswerText + ", "
+                };
+                correctAnswerText = correctAnswerText + curQuestion.answers[key].answerText;
+            } else {
+                $("#" + key + ".choice").addClass("bg-danger");
+            }
+            if (correctAnswerCount > 1) {
+                $("#game-message").text("Correct answers are: \"" + correctAnswerText + "\"")
+            } else {
+                $("#game-message").text("Correct answer is: \"" + correctAnswerText + "\"")
+            };
 
 
-
+        }
+    }
 }
 
 function startTimer(startTime) {
@@ -144,37 +173,40 @@ function startTimer(startTime) {
 }
 
 function timerInterval() {
-    // update countdown and display
-    console.log("time: ", timeCounter);
+    // update and display countdown timer
     timeCounter--;
     $pTimerOrStatus.text("Time Left: " + timeConverter(timeCounter));
-    // check if times up
+    // check if times up....
     if (timeCounter <= 0) {
-        // times up
+        // ...time is up
         clearInterval(questionTimer);
         timesUp();
     }
 }
 
 function timesUp() {
-    gamePause = true;
-    console.log("times up");
-    // do stuff when time has ran out
+    gamePaused = true; // pause game while 'times up' text is displayed
+    // display 'times up' text and call the next question function after a few seconds
     $pTimerOrStatus.attr("class", "h2 p-3 text-danger").text("Time's Up!");
-    setTimeout(displayNextQuestion, 3000);
+    displayCorrectAnswer()
+    setTimeout(displayNextQuestion, defaultDelay);
 }
 
 function gameOver() {
+    gamePaused = true; // pause game until user selects Reset or reloads
+    // display "game over" text and Reset button
     $pTimerOrStatus.attr("class", "h2 p-3 text-danger").text("Game Over");
-    $("#reset-button").attr("hidden", false);
-    // $("#reset-button").show();
+    $("#reset-button").addClass("d-inline-block");
+    $("#reset-button").show();
+
+
 }
 
 function resetGame() {
     gamePaused = false;
     $pTimerOrStatus.attr("class", "h2 p-3 text-black").text("");
-    $("#reset-button").attr("hidden", true);
-    // $("#reset-button").hide();
+    $("#reset-button").removeClass("d-inline-block");
+    $("#reset-button").hide();
     arrHelper.fill(0);
     displayNextQuestion();
 }
@@ -193,40 +225,53 @@ function timeConverter(t) {
     return minutes + ":" + seconds;
 }
 
-// INITIALIZE ----------------------------------------------------------------
+// INITIALIZE
+$("#reset-button").hide();
 arrHelper = arrHelper.fill(0, 0, arrQuestions.length);
 displayNextQuestion();
 
+
+// EVENT HANDLERS
+
 $("#main-container").on("click", ".choice", function () {
-
+    // do nothing if game is paused
     if (gamePaused == false) {
-        let answerSelected = $(this).attr("id");
-
-        console.log("use selected answer: ", curQuestion.answers[answerSelected].correct);
-
+        let selectedAnswerId = $(this).attr("id");
+        let $selectedAnswer = $(this);
         // var checkChoice = function (answerSelected) {
-        if (curQuestion.answers[answerSelected].correct) {
-            //  user selected correct answer. yay
-            console.log("correct answer");
+        if (curQuestion.answers[selectedAnswerId].correct) {
+            //  correct answer
             gamePaused = true;
+            $selectedAnswer.addClass("bg-success");
             $pTimerOrStatus.attr("class", "h2 p-3 text-success").text("Correct!");
             clearInterval(questionTimer);
             setTimeout(function () {
                 displayNextQuestion(true);
-            }, 3000);
+            }, defaultDelay);
         } else {
-            //  incorrect! do something else?
-            console.log("incorrect answer");
+            //  incorrect answer
             gamePaused = true;
+            $selectedAnswer.addClass("bg-danger");
             $pTimerOrStatus.attr("class", "h2 p-3 text-danger").text("Wrong!");
             clearInterval(questionTimer);
             setTimeout(function () {
                 displayNextQuestion(false);
-            }, 3000);
+            }, defaultDelay);
         }
     }
 });
 
+// stylize when mouse is over an answer choice
+$("#main-container").on("mouseenter", ".choice", function () {
+    // do when mouse enter
+    $(this).removeClass("border border-0");
+    $(this).addClass("border border-top-0 border-bottom-0 border-dark rounded");
+});
+$("#main-container").on("mouseleave", ".choice", function () {
+    // do when mouse leave
+    $(this).removeClass("border border-0 border-dark rounded");
+    $(this).addClass("border border-0");
+});
 
 $("#reset-button").on("click", function () {
     resetGame();
