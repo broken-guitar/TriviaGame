@@ -1,53 +1,31 @@
 // VARIABLES
 
-var $divQuestion = $("#question-container");
-var $divAnswers = $("#answer-container");
-var $pTimerOrStatus = $("#timer-status");
-var $divGameMessage = $("#game-message");
 var arrQuestions = [{
         questionText: "Who created Javascript?",
         answers: {
-            a: {
-                answerText: "Microsoft",
-                correct: false
-            },
-            b: {
-                answerText: "Sun Microsystems",
-                correct: false
-            },
-            c: {
-                answerText: "Oracle",
-                correct: false
-            },
-            d: {
-                answerText: "Netscape",
-                correct: true
-            }
+            a: {answerText: "Microsoft",
+                correct: false},
+            b: {answerText: "Sun Microsystems",
+                correct: false},
+            c: {answerText: "Oracle",
+                correct: false},
+            d: {answerText: "Netscape",
+                correct: true}
         }
     },
     {
         questionText: "JavaScript wasn’t always called that. What other names has it been released under?",
         answers: {
-            a: {
-                answerText: "Latte",
-                correct: false
-            },
-            b: {
-                answerText: "Mocha",
-                correct: true
-            },
-            c: {
-                answerText: "LiveScript",
-                correct: true
-            },
-            d: {
-                answerText: "BScript",
-                correct: false
-            },
-            e: {
-                answerText: "Spidermonkey",
-                correct: false
-            }
+            a: {answerText: "Latte",
+                correct: false},
+            b: {answerText: "Mocha",
+                correct: true},
+            c: {answerText: "LiveScript",
+                correct: true},
+            d: {answerText: "BScript",
+                correct: false},
+            e: {answerText: "Spidermonkey",
+                correct: false}
         }
     },
     {
@@ -86,53 +64,76 @@ var arrQuestions = [{
     }
 ];
 
+
+
 const allowedTime = 10;
-const defaultDelay = 3500;
-var gamePaused = false;
+const defaultDelay = 3000;
+var gamePaused = true;
+var quesitonsCorrect;
 var timeCounter;
 var questionTimer;
 var curQuestion = {};
 var arrHelper = [];
-arrHelper.length = arrQuestions.length;
-arrHelper.fill(0);
+var $divQuestion = $("#question-container");
+var $divAnswers = $("#answer-container");
+var $pTimerOrStatus = $("#timer-status");
+var $divGameMessage = $("#game-message");
+$startButton = $("<button>").attr({
+    "id": "start-button",
+    "class": "h1 btn btn-lg btn-success ml-3 mb-5 font-weight-bold"
+});
+
+
 
 // FUNCTIONS ----------------------------------------------------------------
 
+function startGame() {
+    // initialize helper (question tracking) array
+    arrHelper.length = arrQuestions.length;
+    arrHelper = arrHelper.fill(0, 0, arrQuestions.length);
+    
+    // clear timer text, reset questionsCorrect counter, and display question
+    $pTimerOrStatus.attr("class", "h2 p-3 text-black").text("");
+    quesitonsCorrect = 0;
+    displayNextQuestion();
+}
 
 function displayNextQuestion(choseWisely) {
+    // pause the game (disable some click events)
     gamePaused = false;
+    // clear the game message container; clear the question timer
     $divGameMessage.empty();
     clearInterval(questionTimer);
     // check if there are still questions to play...
     if (arrHelper.indexOf(0) >= 0) {
-        // ...select next question
+        // still more questions, select next question:
         for (var i = 0; arrHelper.length; i++) {
             if (arrHelper[i] == 1) {
-                // skip this question becuase it's already been played
-                continue;
+                // skip this question, it's already been played.
+                continue; // <-- move to the next iteration.
             } else {
-                // render multiple-choice answers
-                arrHelper[i] = 1; // tag the questions as played in question tracking array
-                curQuestion = arrQuestions[i]; // set global current question object
-                $divQuestion.empty();
+                // render multiple-choice answers:
+                arrHelper[i] = 1; // <- tag the questions as played in question tracking array
+                curQuestion = arrQuestions[i]; // <- set global current question object
+                $divQuestion.empty(); // <- clear the question container
                 $divQuestion.append($("<h3>").text(curQuestion.questionText));
                 $("h3").attr("class", "h3 p-3");
                 $divAnswers.empty();
                 // foreach to loop through questions answers,
-                //  style and append to DOM
+                //  style and append to DOM:
                 Object.entries(curQuestion.answers).forEach(([key, prop]) => {
                     $divAnswers.append($("<h5>").attr({
                         "id": key,
-                        "class": "choice border border-0 border-dark rounded-20 h5 p-3 d-table"
+                        "class": "choice h5 p-3 d-table"
                     }).text("○ " + prop.answerText));
                 });
-                // start the timer
+                // start the timer:
                 startTimer(allowedTime);
                 break;
             }
         }
     } else {
-        // no more questions; game over
+        // ...no more questions to play, game over
         gameOver();
     }
 }
@@ -159,10 +160,15 @@ function displayCorrectAnswer() {
             } else {
                 $("#game-message").text("Correct answer is: \"" + correctAnswerText + "\"")
             };
-
-
         }
     }
+}
+
+function displayResult(){
+    let resultText =
+        "You got " + quesitonsCorrect.toString() +
+        " of " + arrQuestions.length.toString() + " questions correct.";
+    $("#game-message").text(resultText);
 }
 
 function startTimer(startTime) {
@@ -194,21 +200,14 @@ function timesUp() {
 
 function gameOver() {
     gamePaused = true; // pause game until user selects Reset or reloads
-    // display "game over" text and Reset button
+    
+    // display "game over" text
     $pTimerOrStatus.attr("class", "h2 p-3 text-danger").text("Game Over");
-    $("#reset-button").addClass("d-inline-block");
-    $("#reset-button").show();
-
-
-}
-
-function resetGame() {
-    gamePaused = false;
-    $pTimerOrStatus.attr("class", "h2 p-3 text-black").text("");
-    $("#reset-button").removeClass("d-inline-block");
-    $("#reset-button").hide();
-    arrHelper.fill(0);
-    displayNextQuestion();
+    // show quiz results
+    displayResult();
+    // display start over button
+    $("#question-container").prepend($startButton.text("Start Over?"));
+    //
 }
 
 function timeConverter(t) {
@@ -225,13 +224,54 @@ function timeConverter(t) {
     return minutes + ":" + seconds;
 }
 
-// INITIALIZE
-$("#reset-button").hide();
-arrHelper = arrHelper.fill(0, 0, arrQuestions.length);
-displayNextQuestion();
+function moveOut(element){
+    $element = $(element);
+    $element.animate({
+        left: "150%"
+    }, 600);
+}
 
+// credit goes to Davy8 on stackoverflow for this moveAnimate function
+function moveAnimate(element, newParent) {
+    //Allow passing in either a jQuery object or selector
+    element = $(element);
+    newParent = $(newParent);
+  
+    var oldOffset = element.offset();
+    element.appendTo(newParent);
+    var newOffset = element.offset();
+  
+    var temp = element.clone().appendTo("body");
+    temp.css({
+      position: "absolute",
+      left: oldOffset.left,
+      top: oldOffset.top,
+      "z-index": 1000
+    });
+    element.hide();
+    temp.animate({
+        top: newOffset.top,
+        left: newOffset.left
+      },
+      "slow",
+      function () {
+        element.show();
+        temp.remove();
+      }
+    );
+  }
+
+// INITIALIZE
+gamePaused = true;
+$("#game-message").append($startButton.text("Begin"));
 
 // EVENT HANDLERS
+
+$("#main-container").on("click", "#start-button", function (e) {
+    e.preventDefault();
+    console.log("start button clicked");
+    startGame();
+});
 
 $("#main-container").on("click", ".choice", function () {
     // do nothing if game is paused
@@ -240,18 +280,24 @@ $("#main-container").on("click", ".choice", function () {
         let $selectedAnswer = $(this);
         // var checkChoice = function (answerSelected) {
         if (curQuestion.answers[selectedAnswerId].correct) {
-            //  correct answer
+            // correct answer:
+            // pause game (click do nothing), increment score, update page, clear timer,
+            // call function to display next question
             gamePaused = true;
+            quesitonsCorrect++; 
             $selectedAnswer.addClass("bg-success");
+            $(".choice").addClass("question-answered");
             $pTimerOrStatus.attr("class", "h2 p-3 text-success").text("Correct!");
             clearInterval(questionTimer);
             setTimeout(function () {
                 displayNextQuestion(true);
             }, defaultDelay);
         } else {
-            //  incorrect answer
+            //  incorrect answer:
+            //  similar to correct answer block but don't increment questionsCorrect
             gamePaused = true;
             $selectedAnswer.addClass("bg-danger");
+            $(".choice").addClass("question-answered");
             $pTimerOrStatus.attr("class", "h2 p-3 text-danger").text("Wrong!");
             clearInterval(questionTimer);
             setTimeout(function () {
@@ -261,18 +307,19 @@ $("#main-container").on("click", ".choice", function () {
     }
 });
 
-// stylize when mouse is over an answer choice
-$("#main-container").on("mouseenter", ".choice", function () {
-    // do when mouse enter
-    $(this).removeClass("border border-0");
-    $(this).addClass("border border-top-0 border-bottom-0 border-dark rounded");
-});
-$("#main-container").on("mouseleave", ".choice", function () {
-    // do when mouse leave
-    $(this).removeClass("border border-0 border-dark rounded");
-    $(this).addClass("border border-0");
-});
+// style answer choice elements on mouse over...
+$("#main-container").on({
+    mouseenter: function () {
+        // ...when mouse over
+        if (gamePaused){return;}
+        $(this).removeClass("border border-0");
+        $(this).addClass("border border-top-0 border-bottom-0 border-dark rounded");
+    },
+    mouseleave: function () {
+        // ...when mouse leaves
+        if (gamePaused){return;}
+        $(this).removeClass("border border-0 border-dark rounded");
+        $(this).addClass("border border-0");
+    }
+}, ".choice");
 
-$("#reset-button").on("click", function () {
-    resetGame();
-});

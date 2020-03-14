@@ -31,6 +31,10 @@ body {
     margin-left: 1px;
 }
 
+.choice.question-answered {
+    margin-left: 1px;
+}
+
 .classHide {
     visibility: hidden;
 }
