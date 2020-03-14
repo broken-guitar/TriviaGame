@@ -269,7 +269,6 @@ $("#game-message").append($startButton.text("Begin"));
 
 $("#main-container").on("click", "#start-button", function (e) {
     e.preventDefault();
-    console.log("start button clicked");
     startGame();
 });
 
